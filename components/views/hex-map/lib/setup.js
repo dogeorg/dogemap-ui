@@ -1,8 +1,10 @@
 export function setup () {
-  console.group('HexMap loading..');
+  console.group('+++ HexMap loading..');
 
   // Set the height and width to whatever the the dimensions of the host element are.
   const { width, height } = this.getBoundingClientRect();
+  if (width <= 0 || height <= 0) return; // BUG: sometimes (0,0) which crashes.
+  
   this.width = width;
   this.height = height;
   this.pixelRatio = window.devicePixelRatio || 1;

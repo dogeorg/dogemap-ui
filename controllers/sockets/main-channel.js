@@ -24,7 +24,7 @@ class SocketChannel {
     }
 
     this.wsClient = new WebSocketClient(
-      "ws://localhost:3000/ws/state/",
+      "ws://localhost:8000/ws/state/",
       store.networkContext,
     );
 

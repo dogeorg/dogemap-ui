@@ -16,7 +16,6 @@ export function renderFooter() {
 
   return html`
     <footer>
-      I'm a footer
     </footer>
     <style>${footerStyles}</style>
   `;

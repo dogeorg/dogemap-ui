@@ -55,7 +55,7 @@ class HexMap extends LitElement {
     // On first update (when this component is provided world & point data)
     // Perform the extensive setup function that produces the hexgrig.
     // Refer to /lib/setup.js
-    this.setup();
+    // this.setup(); // wait for 'nonce'
   }
 
   disconnectedCallback() {
@@ -75,10 +75,10 @@ class HexMap extends LitElement {
     return html`
       <canvas id="Hexmap"></canvas>
 
-      <div class="floating center">
+      <!--div class="floating center">
         <p>HexMap Run Time: <span>${asyncReplace(this.counter)}</span></p>
         <p>Last Updated: ${this.nonce}</p>
-      </div>
+      </div-->
     `;
   }
 }

@@ -23,7 +23,8 @@ export default class ApiClient {
     }
 
     // If mocks enabled, avoid making legitimate request, return mocked response (success or error) instead.
-    if (this.networkContext.useMocks && config.mock) {
+    // XXX always use mock for path="world"
+    if ((this.networkContext.useMocks || path === "world") && config.mock) {
       return await returnMockedResponse(path, config, this.networkContext)
     }
 
@@ -55,7 +56,7 @@ export default class ApiClient {
       data = await response.json();
     } catch (jsonParseErr) {
       console.warn('Could not JSON parse response from server', jsonParseErr);
-      throw new Error('Could not JSON parse response from server');
+      throw new Error('Could not JSON parse response from server: '+String(jsonParseErr));
     }
 
     return data;

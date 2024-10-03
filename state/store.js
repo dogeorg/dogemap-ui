@@ -12,11 +12,11 @@ class Store {
       pathname: '/'
     };
 
-    this.networkContext = this.networkContext || {
-      apiBaseUrl: 'http://localhost:3000',
+    this.networkContext = { // this.networkContext || 
+      apiBaseUrl: window.location.origin+'/dmx/dogenet/', // for jampuppy server
       overrideBaseUrl: false,
-      useMocks: true,
-      forceDelayInSeconds: 1,
+      useMocks: false,
+      forceDelayInSeconds: 0,
       reqLogs: true,
     };
 
@@ -43,7 +43,7 @@ class Store {
         const savedState = JSON.parse(localStorage.getItem('storeState'));
         if (savedState) {
           this.appContext = savedState.appContext;
-          this.networkContext = savedState.networkContext;
+          // this.networkContext = savedState.networkContext;
           // Load other slices as needed
         }
       } catch (error) {
@@ -57,7 +57,7 @@ class Store {
       try {
         const stateToPersist = {
           appContext: this.appContext,
-          networkContext: this.networkContext,
+          // networkContext: this.networkContext,
           // Include other slices of state as needed
         };
         localStorage.setItem('storeState', JSON.stringify(stateToPersist));

@@ -16,7 +16,6 @@ export function renderNav() {
 
   return html`
     <nav class="top">
-      I'm a nav
     </nav>
     <style>${topNavStyles}</style>
   `;
