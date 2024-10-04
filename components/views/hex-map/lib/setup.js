@@ -112,6 +112,7 @@ export function setup () {
     console.warn("Insufficient data for clustering.");
     console.log('Setup complete, now Drawing.');
     console.groupEnd();
+    this.color = function(w){ return w ? '#C56B00' : '#444444'; }
     this.draw(); // Draw the map with available data only
     return;
   }
