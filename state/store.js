@@ -13,7 +13,7 @@ class Store {
     };
 
     this.networkContext = { // this.networkContext || 
-      apiBaseUrl: window.location.origin+'/dogenet/', // jampuppy proxies /dogenet
+      apiBaseUrl: window.location.origin+'/',
       overrideBaseUrl: false,
       useMocks: false,
       forceDelayInSeconds: 0,
