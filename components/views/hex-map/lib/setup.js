@@ -36,8 +36,7 @@ export function setup () {
 
   console.group('Configuring canvas..')
   // Retreive the 2d rendering context of our canvas
-  // The desynchronized option allows more responsive zoom/pan.
-  this.renderingContext = this.canvas.node().getContext("2d", { desynchronized: true });
+  this.renderingContext = this.canvas.node().getContext("2d");
 
   // Set the rendering context scale to match the pixel density 
   // of the user's device to ensure a clear image.
@@ -91,6 +90,7 @@ export function setup () {
 
   // Defines a new path for a hexagon shape
   this.hexagon = new Path2D(this.hex.hexagon());
+  this.hexedge = new Path2D(this.hex.hexagon(3.5));
   console.log('..defining hexagon');
 
   // Color scale.

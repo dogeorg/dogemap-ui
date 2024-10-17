@@ -1,21 +1,35 @@
 export function draw() {
-  const ctx = this.renderingContext
-  ctx.clearRect(0, 0, this.width, this.height);
-  
-  this.hex.grid.layout.forEach((hex) => {
+  // defer drawing until the next video refresh,
+  // which allows multiple events to coalesce.
+  //requestAnimationFrame(() => {
+    const ctx = this.renderingContext
+
+    // Clear the entire canvas area 
+    // before applying new transformations and redrawing the content
+    ctx.clearRect(0, 0, this.width, this.height);
+
+    // Save the starting canvas state
     ctx.save();
-    ctx.translate(hex.x, hex.y);
 
-    // Fill
-    ctx.fillStyle = this.color(hex);
-    ctx.fill(this.hexagon);
-  
-    // Border
-    ctx.strokeStyle = "#75FBF9";
-    ctx.lineWidth = 0.1;
+    // Apply pan and zoom
+    ctx.translate(this.panX, this.panY);
+    ctx.scale(this.zoom, this.zoom);
 
-    // Point
-    ctx.stroke(this.hexagon);
+    var prevX = 0, prevY = 0;
+    for (var hex of this.hex.grid.layout) {
+      ctx.translate(hex.x - prevX, hex.y - prevY);
+      prevX = hex.x; prevY = hex.y;
+
+      // Border
+      ctx.fillStyle = "#75FBF922";
+      ctx.fill(this.hexedge);
+
+      // Fill
+      ctx.fillStyle = this.color(hex);
+      ctx.fill(this.hexagon);
+    }
+
+    // Restore the original canvas state
     ctx.restore();
-  });
+  //});
 }
