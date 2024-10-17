@@ -36,7 +36,8 @@ export function setup () {
 
   console.group('Configuring canvas..')
   // Retreive the 2d rendering context of our canvas
-  this.renderingContext = this.canvas.node().getContext("2d");
+  // The desynchronized option allows more responsive zoom/pan.
+  this.renderingContext = this.canvas.node().getContext("2d", { desynchronized: true });
 
   // Set the rendering context scale to match the pixel density 
   // of the user's device to ensure a clear image.
@@ -55,11 +56,10 @@ export function setup () {
   // We initialize a geoPath generator, which is used to convert GeoJSON data 
   // into SVG path data or Canvas drawing paths, depending on the rendering context provided.
   // By setting the .projection(projection) we ensure that the path data is calculated according
-  // to the Robinson projection set above. The .context(this.context) indicates that
-  // the paths should be rendered on our Canvas context.
+  // to the Robinson projection set above. No .context() call required; hexgrid() sets its own
+  // Canvas context.
   const geoPath = d3.geoPath()
-    .projection(this.projection)
-    .context(this.renderingContext);
+    .projection(this.projection);
   console.log('..setting geoPath');
 
   // Iterate over our array of points, "projecting" these geographical coordinates
@@ -84,7 +84,9 @@ export function setup () {
   console.log('..configuring hexgrid');
 
   // Hexgrid instance.
-  this.hex = hexgrid(this.points);
+  // userVariables=['core'] copies the 'core' property to hex.grid.layout (per point)
+  // depends on custom modifications to d3-hexgrid.js to merge 'core' -> 'net'
+  this.hex = hexgrid(this.points, ['core']);
   console.log('..suppling hexgrid with point data');
 
   // Defines a new path for a hexagon shape
@@ -133,10 +135,19 @@ export function setup () {
   // The domain of the scale is set to the break points calculated
   // by the ckmeans clustering, and the range is an array of color values.
   // This color scale will be used to color the hexagons based on their data weight.
-  this.color = d3
+  // We use two color scales, one for Core nodes and one for DogeNet nodes.
+  const coreThreshold = d3
     .scaleThreshold()
     .domain(ckBreaks)
     .range(["#444444", "#F0BE5F", "#ECB23B", "#EF9907", "#C56B00"]);
+  const netThreshold = d3
+    .scaleThreshold()
+    .domain(ckBreaks)
+    .range(["#444444", "#BEF05F", "#B2EC3B", "#99EF07", "#6BC500"]);
+  this.color = function(hex) {
+    const w = hex.datapointsWt;
+    return hex.net ? netThreshold(w) : coreThreshold(w);
+  }
   console.log('..adjusting colours per clustering');
 
   // We clustered, lets draw.

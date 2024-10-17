@@ -7,7 +7,7 @@ export function draw() {
     ctx.translate(hex.x, hex.y);
 
     // Fill
-    ctx.fillStyle = this.color(hex.datapointsWt);
+    ctx.fillStyle = this.color(hex);
     ctx.fill(this.hexagon);
   
     // Border
