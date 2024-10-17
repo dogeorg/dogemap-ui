@@ -1,5 +1,9 @@
 /**
  * d3-hexgrid plugin v0.3.0. https://github.com/larsvers/d3-hexgrid.git.
+ * 
+ * MODIFIED for DogeBox with:
+ *   - Performance optimisations (6s -> 0.5s)
+ *   - DogeBox 'net' property-merging.
  */
 
 (function (global, factory) {
@@ -525,11 +529,16 @@
         }
 
         var id = pi + "-" + pj, bin = binsById[id];
-        if (bin) bin.push(point);
+        if (bin) bin.points.push(point);
         else {
-          bins.push(bin = binsById[id] = [point]);
-          bin.x = (pi + (pj & 1) / 2) * dx;
-          bin.y = pj * dy;
+          // optimize: use a real object with consistent shape.
+          // note: changes the structure of 'hexPoints'
+          binsById[id] = bin = {
+            x: (pi + (pj & 1) / 2) * dx,
+            y: pj * dy,
+            points: [point]
+          };
+          bins.push(bin);
         }
       }
 
@@ -672,8 +681,8 @@
     canvas.width = _size[0];
     canvas.height = _size[1];
 
-
-    var context = canvas.getContext('2d');
+    // optimized: willReadFrequently due to getImageData calls.
+    var context = canvas.getContext('2d', { willReadFrequently: true });
 
     var canvasPath = pathGen.context(context);
 
@@ -697,9 +706,12 @@
 
     // Get the pixel rgba data but only keep the 4th value (alpha).
     var imgData = context.getImageData(0, 0, size[0], size[1]).data;
-    return imgData.filter(function (d, i) {
-      return i % 4 === 3;
-    });
+    // return imgData.filter(function (d, i) { return i % 4 === 3 });
+    // optimized: avoid filter() closure calls.
+    for (var from=3,to=0; from<imgData.length; from+=4) {
+      imgData[to++] = imgData[from];
+    }
+    return new Uint8ClampedArray(imgData.buffer, 0, imgData.length/4); // new view
   }
 
   /**
@@ -773,7 +785,8 @@
     // const canvasHex = d3.select('body').append('canvas').node()
     canvasHex.width = w;
     canvasHex.height = h;
-    var contextHex = canvasHex.getContext('2d');
+    // optimized: willReadFrequently due to getImageData calls.
+    var contextHex = canvasHex.getContext('2d', { willReadFrequently: true });
 
     // Get the hexagon's corner points.
     var hexCorners = Array(7);
@@ -798,7 +811,8 @@
     // const canvasImage = d3.select('body').append('canvas').node();
     canvasImage.width = width * precision;
     canvasImage.height = height * precision;
-    var contextImage = canvasImage.getContext('2d');
+    // optimized: willReadFrequently due to getImageData calls.
+    var contextImage = canvasImage.getContext('2d', { willReadFrequently: true });
 
     // Set the context for the path generator for use with Canvas.
     pathGen.context(contextImage);
@@ -824,7 +838,8 @@
     // const canvasMix = d3.select('body').append('canvas').node()
     canvasMix.width = w;
     canvasMix.height = h;
-    var contextMix = canvasMix.getContext('2d');
+    // optimized: willReadFrequently due to getImageData calls.
+    var contextMix = canvasMix.getContext('2d', { willReadFrequently: true });
 
     return { canvasHex: canvasHex, canvasImage: canvasImage, contextMix: contextMix };
   }
@@ -1013,22 +1028,34 @@
     for (var i = 0; i < hexPoints.length; i++) {
       // Cache current element and prep cover variable.
       var hexPoint = hexPoints[i];
+      var datapoints = 0;
       var cover = void 0;
-      var gridpoint = void 0;
+      var gridpoint = 0;
+      var net = false; // DogeBox 'net' property-merging.
 
       // Remove grid points and cache cover.
-      for (var j = 0; j < hexPoint.length; j++) {
-        if (hexPoint[j].gridpoint === 1) {
-          cover = hexPoint[j].cover;
+      // optimize: count non-gridpoints (instead of splicing array) [also bugfix!]
+      for (var j = 0; j < hexPoint.points.length; j++) {
+        var point = hexPoint.points[j];
+        if (point.gridpoint === 1) {
+          cover = point.cover;
           gridpoint = 1;
-          hexPoint.splice(j, 1);
+        } else {
+          datapoints += 1;
+          if (!point.core) net = true; // DogeBox 'net' property-merging.
         }
       }
 
       // Augment with new properties.
-      hexPoints[i].datapoints = hexPoints[i].length;
-      hexPoints[i].cover = cover;
-      hexPoints[i].gridpoint = gridpoint || 0;
+      // optimize: use a single consistent object shape!
+      hexPoints[i] = {
+        x: hexPoint.x,
+        y: hexPoint.y,
+        datapoints: datapoints,
+        cover: cover,
+        gridpoint: gridpoint,
+        net: net, // DogeBox 'net' property-merging.
+      };
     }
 
     return hexPoints;
