@@ -44,6 +44,8 @@ class HexMap extends LitElement {
     this.panX = 0;
     this.panY = 0;
     this.zoom = 1;
+    this.d3zoom = void 0;
+    this.ready = false;
 
     // We have placed some of this class methods
     // into separate files for organisation sake
@@ -53,17 +55,11 @@ class HexMap extends LitElement {
 
   connectedCallback() {
     super.connectedCallback();
-    // observe changes to the Element's size.
+    // Observe changes to the Element's size.
     this.resizeObserver = new ResizeObserver((entries) => {
-      // update the Robinson projection and redraw.
-      // defer until the next video refresh, which allows
-      // multiple resize events to coalesce.
-      requestAnimationFrame(()=>{
-        this.panX = 0;
-        this.panY = 0;
-        this.zoom = 1;
-        this.setup();
-      });
+      // Update the Robinson projection and redraw.
+      this.ready = true;
+      this.setup();
     })
     this.resizeObserver.observe(this.shadowRoot.host);
   }
@@ -87,8 +83,13 @@ class HexMap extends LitElement {
   updated(changedProperties) {
     changedProperties.forEach((oldValue, propName) => {
       if (propName === 'nonce') {
-        // when this changes, its a signal for hex-map to re-draw.
-        this.setup();
+        // When this changes, its a signal for hex-map to re-draw.
+        // Only after the first setup() call.
+        if (this.ready) {
+          requestAnimationFrame(()=>{
+            this.setup();
+          });
+        }
       }
     });
   }

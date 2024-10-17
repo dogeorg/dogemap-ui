@@ -2,6 +2,7 @@ export function setup () {
   console.group('+++ HexMap loading..');
 
   // Set the height and width to whatever the the dimensions of the host element are.
+  const oldWidth = this.width, oldHeight = this.height; // for resize.
   const { width, height } = this.getBoundingClientRect();
   if (width <= 0 || height <= 0) return; // BUG: sometimes (0,0) which crashes.
   
@@ -93,6 +94,28 @@ export function setup () {
   this.hexedge = new Path2D(this.hex.hexagon(3.5));
   console.log('..defining hexagon');
 
+  // Attach zoom handler
+  if (!this.d3zoom) {
+    // Only create this once, so it keeps its state (pan and zoom)
+    // while we resize the browser window.
+    this.d3zoom = d3
+      .zoom()
+      .extent(()=>[[0,0],[this.width,this.height]]) // viewport
+      .translateExtent([[0,0],[this.width,this.height]]) // world extent
+      .scaleExtent([1, 8])
+      .on("zoom", this.handleZoom);
+    this.canvas.call(this.d3zoom);
+  } else {
+    // Update the translateExtent on resize, because it cannot be a function.
+    // This doesn't seem to be an indended use-case (it's world-space not view-space)
+    this.d3zoom.translateExtent([[0,0],[this.width,this.height]]);
+    // Apply the extent constraints, and scroll by half the size difference
+    // to keep the current scroll position (relatively) constant.
+    // This doesn't work very well because we keep changing the size of the
+    // world, and we keep changing the hex size as well (so the map shimmers)
+    this.canvas.call(this.d3zoom.translateBy, (oldWidth-this.width)/2, (oldHeight-this.height)/2);
+  }
+
   // Color scale.
   // This property represents kind of weight or count of data points
   // within each hexagon, and the filter removes any hexagons without data points.
@@ -100,14 +123,6 @@ export function setup () {
     .map((el) => el.datapointsWt)
     .filter((el) => el > 0);
   console.log('..considering clustering');
-
-  // Attach zoom handler
-  this.canvas
-    .call(d3
-      .zoom()
-      .scaleExtent([1, 8])
-      .on("zoom", this.handleZoom)
-    );
 
   // Check if there is enough data for clustering
   if (counts.length < 5) {
