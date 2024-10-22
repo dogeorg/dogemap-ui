@@ -3,7 +3,7 @@
  * 
  * MODIFIED for DogeBox with:
  *   - Performance optimisations (6s -> 0.5s)
- *   - DogeBox 'net' property-merging.
+ *   - DogeBox 'net' property-merging in rollupPoints
  */
 
 (function (global, factory) {
