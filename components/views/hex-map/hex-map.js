@@ -57,9 +57,14 @@ class HexMap extends LitElement {
     super.connectedCallback();
     // Observe changes to the Element's size.
     this.resizeObserver = new ResizeObserver((entries) => {
-      // Update the Robinson projection and redraw.
-      this.ready = true;
-      this.setup();
+      // We always receive this once after the data arrives,
+      // so defer the setup until we have our viewport size.
+      if (!this.ready) {
+        this.ready = true;
+        this.setup();
+      } else {
+        this.resize();
+      }
     })
     this.resizeObserver.observe(this.shadowRoot.host);
   }
@@ -84,7 +89,7 @@ class HexMap extends LitElement {
     changedProperties.forEach((oldValue, propName) => {
       if (propName === 'nonce') {
         // When this changes, its a signal for hex-map to re-draw.
-        // Only after the first setup() call.
+        // Only after the first setup() call in ResizeObserver.
         if (this.ready) {
           requestAnimationFrame(()=>{
             this.setup();

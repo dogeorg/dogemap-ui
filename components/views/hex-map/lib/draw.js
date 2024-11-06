@@ -1,6 +1,5 @@
 export function draw() {
   const ctx = this.renderingContext
-  const transform = this.d3zoom
 
   // Clear the entire canvas area 
   // before applying new transformations and redrawing the content

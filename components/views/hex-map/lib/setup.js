@@ -1,11 +1,13 @@
+// World size: this is the size of the 'document' we can zoom/pan around.
+const docWidth = 2000, docHeight = 1000;
+
 export function setup () {
   console.group('+++ HexMap loading..');
 
   // Set the height and width to whatever the the dimensions of the host element are.
-  const oldWidth = this.width, oldHeight = this.height; // for resize.
   const { width, height } = this.getBoundingClientRect();
   if (width <= 0 || height <= 0) return; // BUG: sometimes (0,0) which crashes.
-  
+
   this.width = width;
   this.height = height;
   this.pixelRatio = window.devicePixelRatio || 1;
@@ -50,7 +52,7 @@ export function setup () {
 
   // We are using the Robinson projection, which is a commonly used for 
   // displaying the entire world in a more visually pleasing way.
-  this.projection = d3.geoRobinson().fitSize([this.width, this.height], this.world);
+  this.projection = d3.geoRobinson().fitSize([docWidth, docHeight], this.world);
   console.log('..setting projection');
 
   // We initialize a geoPath generator, which is used to convert GeoJSON data 
@@ -58,7 +60,7 @@ export function setup () {
   // By setting the .projection(projection) we ensure that the path data is calculated according
   // to the Robinson projection set above. No .context() call required; hexgrid() sets its own
   // Canvas context.
-  const geoPath = d3.geoPath()
+  const geoPath = d3.geoPath() // svg.append("path").attr("d", d3.geoPath());
     .projection(this.projection);
   console.log('..setting geoPath');
 
@@ -76,7 +78,7 @@ export function setup () {
   // Hexgrid generator.
   const hexgrid = d3
     .hexgrid()
-    .extent([this.width, this.height])
+    .extent([docWidth, docHeight])
     .geography(this.world)
     .projection(this.projection)
     .pathGenerator(geoPath)
@@ -94,26 +96,22 @@ export function setup () {
   this.hexedge = new Path2D(this.hex.hexagon(3.5));
   console.log('..defining hexagon');
 
+  // Minimum zoom: document height matches the viewport height (dynamic)
+  const minZoom = height / docHeight;
+
   // Attach zoom handler
   if (!this.d3zoom) {
     // Only create this once, so it keeps its state (pan and zoom)
     // while we resize the browser window.
     this.d3zoom = d3
       .zoom()
-      .extent(()=>[[0,0],[this.width,this.height]]) // viewport
-      .translateExtent([[0,0],[this.width,this.height]]) // world extent
-      .scaleExtent([1, 8])
+      .extent(()=>[[0,0],[this.width,this.height]]) // viewport (function)
+      .translateExtent([[0,0],[docWidth,docHeight]]) // world extent
+      .scaleExtent([minZoom, 8])
       .on("zoom", this.handleZoom);
     this.canvas.call(this.d3zoom);
-  } else {
-    // Update the translateExtent on resize, because it cannot be a function.
-    // This doesn't seem to be an indended use-case (it's world-space not view-space)
-    this.d3zoom.translateExtent([[0,0],[this.width,this.height]]);
-    // Apply the extent constraints, and scroll by half the size difference
-    // to keep the current scroll position (relatively) constant.
-    // This doesn't work very well because we keep changing the size of the
-    // world, and we keep changing the hex size as well (so the map shimmers)
-    this.canvas.call(this.d3zoom.translateBy, (oldWidth-this.width)/2, (oldHeight-this.height)/2);
+    this.d3zoom.scaleTo(this.canvas, minZoom);
+    this.zoom = minZoom;
   }
 
   // Color scale.
@@ -167,6 +165,47 @@ export function setup () {
 
   // We clustered, lets draw.
   console.log('Setup complete, now Drawing.');
+  console.groupEnd();
+  this.draw();
+}
+
+export function resize () {
+  console.group('+++ HexMap resize..');
+
+  // Set the height and width to whatever the the dimensions of the host element are.
+  const { width, height } = this.getBoundingClientRect();
+  if (width <= 0 || height <= 0) return; // BUG: sometimes (0,0) which crashes.
+
+  this.width = width;
+  this.height = height;
+  this.pixelRatio = window.devicePixelRatio || 1;
+
+  // Resize canvas.
+  this.canvas
+    .attr("width", this.width * this.pixelRatio)
+    .attr("height", this.height * this.pixelRatio)
+    .style("width", this.width + 'px')
+    .style("height", this.height + 'px');
+
+  // Set the rendering context scale to match the pixel density 
+  // of the user's device to ensure a clear image.
+  this.renderingContext.resetTransform();
+  this.renderingContext.scale(this.pixelRatio, this.pixelRatio);
+
+  // Minimum zoom: document height matches the viewport height (dynamic)
+  const minZoom = height / docHeight;
+
+  // Update the scale extent on resize, so the fully zoomed out document
+  // vertically fills the entire viewport.
+  this.d3zoom.scaleExtent([minZoom, 8]);
+
+  if (this.zoom < minZoom) {
+    // Must zoom in so the document vertically fills the viewport.
+    this.d3zoom.scaleTo(this.canvas, minZoom);
+    this.zoom = minZoom;
+  }
+
+  console.log('Resize complete, now Drawing.');
   console.groupEnd();
   this.draw();
 }
