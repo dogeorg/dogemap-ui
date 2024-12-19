@@ -16,6 +16,7 @@ import "/components/views/demo-map/demo-map.js";
 // APIs
 import { getWorld } from "/api/world/world.js";
 import { getNodes } from "/api/nodes/nodes.js";
+import { getChits } from "/api/chits/chits.js";
 
 // Utils
 import { bindToClass } from "/utils/class-bind.js";
@@ -43,7 +44,7 @@ class MapView extends LitElement {
   constructor() {
     super();
     // Good place to set defaults.
-    this.show_inspector = false;
+    this.show_inspector = true;
     this.counter = countUp();
     this.last_updated;
 
@@ -112,6 +113,30 @@ class MapView extends LitElement {
       this.originalWorld = world;
       this.originalPoints = points;
 
+      // getChits returns an Object keyed on identity:
+      // identity => name, bio, lat, lon, country, city, icon
+      const chitGets = points.filter(p => p.identity).map(p => ({ node:p.node, identity:p.identity }))
+      const chits = await getChits(chitGets);
+
+      this.profiles = [];
+      for (const pt of points) {
+        // subver(address), lat, lon, city, country, identity, core(bool)
+        const ident = chits[pt.identity];
+        if (ident) {
+          this.profiles.push(ident);
+        } else {
+          this.profiles.push({
+            name: pt.subver,
+            bio: "",
+            lat: pt.lat,
+            lon: pt.lon,
+            country: pt.country,
+            city: pt.city,
+            icon: "",
+          })
+        }
+      }
+
       this.map_data_available = true;
       this.last_updated = Date.now();
     }
@@ -171,8 +196,8 @@ class MapView extends LitElement {
           ></hex-map>
         ` : nothing}
 
-        <div id="minimap" class="floating middleright" style="display: none;">
-        ${this.map_data_available ? html`
+        <div id="minimap" class="floating middleright" style="display:none">
+        ${false && this.map_data_available ? html`
           <hex-map
             .world=${this.world}
             .points=${this.points}
@@ -184,8 +209,10 @@ class MapView extends LitElement {
         <div class="floating bottomright">
           <node-inspector
             ?open=${this.show_inspector || showProfile}
-            .list=${topNodes}
+            .list=${this.profiles}
             .selected=${nodeId}
+            lat="55.3"
+            lon="-173.2"
           >
           </node-inspector>
         </div>
