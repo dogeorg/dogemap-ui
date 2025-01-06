@@ -99,7 +99,7 @@ class MapView extends LitElement {
   }
 
   handleResultsHide(e) {
-    if (e.originalTarget.id === "ResultsDraw") {
+    if (e.originalTarget && e.originalTarget.id === "ResultsDraw") {
       this.show_results = false;
     }
   }
