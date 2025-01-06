@@ -43,8 +43,8 @@ export function setup () {
 
   // Set the rendering context scale to match the pixel density 
   // of the user's device to ensure a clear image.
-  this.renderingContext.scale(this.pixelRatio, this.pixelRatio);
   console.log('..setting scale');
+  this.renderingContext.scale(this.pixelRatio, this.pixelRatio);
 
   // Projection (a function that converts geographical coordinates 
   // (eg latitude and longitude) from a spherical surface (like the Earth)
@@ -52,30 +52,31 @@ export function setup () {
 
   // We are using the Robinson projection, which is a commonly used for 
   // displaying the entire world in a more visually pleasing way.
-  this.projection = d3.geoRobinson().fitSize([docWidth, docHeight], this.world);
   console.log('..setting projection');
+  this.projection = d3.geoRobinson().fitSize([docWidth, docHeight], this.world);
 
   // We initialize a geoPath generator, which is used to convert GeoJSON data 
   // into SVG path data or Canvas drawing paths, depending on the rendering context provided.
   // By setting the .projection(projection) we ensure that the path data is calculated according
   // to the Robinson projection set above. No .context() call required; hexgrid() sets its own
   // Canvas context.
+  console.log('..setting geoPath');
   const geoPath = d3.geoPath() // svg.append("path").attr("d", d3.geoPath());
     .projection(this.projection);
-  console.log('..setting geoPath');
 
   // Iterate over our array of points, "projecting" these geographical coordinates
   // onto the 2D canvas using the Robinson projection to determine their corresponding (x, y) positions
   // on the screen. This processing is essential for accurately placing these points 
   // on the canvas based on their real-world locations.
+  console.log('..determing x/y of each point according to projection');
   this.points.forEach((site) => {
     const coords = this.projection([+site.lng, +site.lat]);
     site.x = coords[0];
     site.y = coords[1];
   });
-  console.log('..determing x/y of each point according to projection');
 
   // Hexgrid generator.
+  console.log('..configuring hexgrid');
   const hexgrid = d3
     .hexgrid()
     .extent([docWidth, docHeight])
@@ -83,18 +84,17 @@ export function setup () {
     .projection(this.projection)
     .pathGenerator(geoPath)
     .hexRadius(3);
-  console.log('..configuring hexgrid');
 
   // Hexgrid instance.
   // userVariables=['core'] copies the 'core' property to hex.grid.layout (per point)
   // depends on custom modifications to d3-hexgrid.js to merge 'core' -> 'net'
-  this.hex = hexgrid(this.points, ['core']);
   console.log('..suppling hexgrid with point data');
+  this.hex = hexgrid(this.points, ['core']);
 
   // Defines a new path for a hexagon shape
+  console.log('..defining hexagon');
   this.hexagon = new Path2D(this.hex.hexagon());
   this.hexedge = new Path2D(this.hex.hexagon(3.5));
-  console.log('..defining hexagon');
 
   // Minimum zoom: document height matches the viewport height (dynamic)
   const minZoom = height / docHeight;
@@ -117,38 +117,31 @@ export function setup () {
   // Color scale.
   // This property represents kind of weight or count of data points
   // within each hexagon, and the filter removes any hexagons without data points.
+  console.log('..performing statistical clustering');
   const counts = this.hex.grid.layout
     .map((el) => el.datapointsWt)
     .filter((el) => el > 0);
-  console.log('..considering clustering');
 
-  // Check if there is enough data for clustering
-  if (counts.length < 5) {
-    console.warn("Insufficient data for clustering.");
-    console.log('Setup complete, now Drawing.');
-    console.groupEnd();
-    this.color = function(w){ return w ? '#C56B00' : '#444444'; }
-    this.draw(); // Draw the map with available data only
-    return;
-  }
+  // This section checks if there are enough data points for meaningful
+  // clustering (at least 4 clusters to match the colour range.)
+  // If we have less than 4 points, reduce the number of clusters to
+  // match (degenerate cases.)
+  const optimalClusters = Math.min(counts.length, 4);
 
-  // This section checks if there are enough data points for 
-  // meaningful clustering (at least 5 clusters). If not, 
-  // it logs a warning and proceeds to draw the map with 
-  // the available data. 
-
-  // If sufficient, it uses the ss.ckmeans method to perform a 
-  // statistical clustering on the data points, dividing them 
-  // into 4 clusters, and extracts the smallest value from each
+  // If we have at least one point, use ss.ckmeans (vendor/@simple-statistics)
+  // to perform statistical clustering on the data points, dividing them 
+  // into [up to] 4 clusters, and extracting the smallest value from each
   // cluster to serve as thresholds for the color scale.
-  const ckBreaks = ss.ckmeans(counts, 4).map((clusters) => clusters[0]);
-  console.log('..performing statistical clustering');
+  // If we have no points, use a single threshold of 1 (degenerate case.)
+  const ckBreaks = counts.length > 0 ?
+    ss.ckmeans(counts, optimalClusters).map((clusters) => clusters[0]) : [1];
 
   // This code sets up a threshold color scale using D3.
   // The domain of the scale is set to the break points calculated
   // by the ckmeans clustering, and the range is an array of color values.
   // This color scale will be used to color the hexagons based on their data weight.
   // We use two color scales, one for Core nodes and one for DogeNet nodes.
+  console.log('..adjusting colours per clustering');
   const coreThreshold = d3
     .scaleThreshold()
     .domain(ckBreaks)
@@ -161,7 +154,6 @@ export function setup () {
     const w = hex.datapointsWt;
     return hex.net ? netThreshold(w) : coreThreshold(w);
   }
-  console.log('..adjusting colours per clustering');
 
   // We clustered, lets draw.
   console.log('Setup complete, now Drawing.');
