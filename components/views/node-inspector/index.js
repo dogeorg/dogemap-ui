@@ -11,8 +11,6 @@ class NodeInspector extends LitElement {
       open: { type: Boolean },
       list: { type: Object },
       selected: { type: String },
-      lat: { type: String },
-      lon: { type: String },
     }
   }
 
@@ -22,19 +20,23 @@ class NodeInspector extends LitElement {
     this.open = false;
     this.list = []
     this.selected = false;
-    this.lat = "";
-    this.lon = "";
   }
 
+  // anchored at bottom-right by map-view
+  // `max-height: 97vh` allows `overflow: scroll` to work
+  // there are two flex columns per li: doge-icon and .col
+  // .loc is moved up to the line above and right-aligned inside .col,
+  // which has a width for this reason.
   static styles = css`
     .wrap {
-      position: absolute;
-      bottom: 0px;
-      right: 0px;
       display: block;
+      position: absolute;
+      bottom: 0;
+      right: 0;
       width: 350px;
-      padding: 0em 1em 0.5em;
-      margin: 1em;
+      max-height: 97vh;
+      overflow-x: hidden;
+      overflow-y: scroll;
       background: rgba(255,255,255,0.1);
     }
     .wrap[hidden="true"] {
@@ -45,27 +47,29 @@ class NodeInspector extends LitElement {
       padding-left: 0;
     }
     li {
+      width: 100%;
       list-style: none;
       display: flex;
-      width: 100%;
     }
     doge-icon {
       display: block;
       width: 48px;
       height: 48px;
       margin-top: 8px;
+      margin-left: 12px;
       x-outline:1px solid red;
+    }
+    .col {
+      width: 282px;
+      padding-left: 12px;
+      margin-bottom: 0px;
+      x-outline:1px solid blue;
+      flex: 1;
     }
     h4 {
       margin-top:0;
       margin-bottom:0;
       padding-top:0;
-    }
-    .col {
-      padding-left: 12px;
-      margin-bottom: 0px;
-      x-outline:1px solid blue;
-      flex: 1;
     }
     .bio {
       font-size: 12px;
@@ -77,6 +81,7 @@ class NodeInspector extends LitElement {
     .city {
       font-size: 12px;
       line-height: 13px;
+      height: 13px;
       color: #aaa;
     }
     .loc {
@@ -86,6 +91,7 @@ class NodeInspector extends LitElement {
       text-align: right;
       position: relative;
       top: -12px;
+      left: -8px;
     }
   `
 
@@ -104,14 +110,13 @@ class NodeInspector extends LitElement {
       <div class="wrap" hidden=${!this.open}>
       
         ${!this.selected ? html`
-          <h3>Nodes at ${this.lat},${this.lon}</h3>
           <ul>
             ${(this.list||[]).map((n) => html`
               <li>
                 <doge-icon data="${n.icon}"></doge-icon>
                 <div class="col">
                   <h4>${n.name}</h3>
-                  <div class="bio">${n.bio || "This can be really long, it has a lot of words and details. It can be up to 120 characters long. So it ends about here."}</div>
+                  <div class="bio">${n.bio}</div>
                   <div class="city">${n.city} ${n.country}</div>
                   <div class="loc">${n.lat},${n.lon}</div>
                 </div>

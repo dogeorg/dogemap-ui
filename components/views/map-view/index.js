@@ -113,33 +113,39 @@ class MapView extends LitElement {
       this.originalWorld = world;
       this.originalPoints = points;
 
-      // getChits returns an Object keyed on identity:
-      // identity => name, bio, lat, lon, country, city, icon
-      const chitGets = points.filter(p => p.identity).map(p => ({ node:p.node, identity:p.identity }))
-      const chits = await getChits(chitGets);
-
-      this.profiles = [];
-      for (const pt of points) {
-        // subver(address), lat, lon, city, country, identity, core(bool)
-        const ident = chits[pt.identity];
-        if (ident) {
-          this.profiles.push(ident);
-        } else {
-          this.profiles.push({
-            name: pt.subver,
-            bio: "",
-            lat: pt.lat,
-            lon: pt.lon,
-            country: pt.country,
-            city: pt.city,
-            icon: "",
-          })
-        }
-      }
-
       this.map_data_available = true;
       this.last_updated = Date.now();
     }
+  }
+
+  async fetchProfiles(points) {
+    // getChits returns an Object keyed on identity:
+    // identity => name, bio, lat, lon, country, city, icon
+    const chitGets = points.filter(p => p.identity).map(p => ({ node:p.node, identity:p.identity }))
+    const chits = await getChits(chitGets);
+
+    this.profiles = [];
+    for (const pt of points) {
+      // subver(address), lat, lon, city, country, identity, core(bool)
+      const ident = chits[pt.identity];
+      if (ident) {
+        this.profiles.push(ident);
+      } else {
+        this.profiles.push({
+          name: pt.subver,
+          bio: "",
+          lat: pt.lat,
+          lon: pt.lon,
+          country: pt.country,
+          city: pt.city,
+          icon: "",
+        })
+      }
+    }
+
+    // XXX hack to force the <node-inspector> component to update, since we changed this.profiles above.
+    // FIXME: this re-runs the <hex-map> setup process as well!
+    this.last_updated = Date.now();
   }
 
   closeNode() {
@@ -154,6 +160,12 @@ class MapView extends LitElement {
 
   handleResultsTabClick() {
     this.show_results = !this.show_results;
+  }
+
+  handleSelectionChanged(e) {
+    const points = e.target.selectedPoints; // HexMap.selectedPoints
+    console.log("selectedPoints", points);
+    this.fetchProfiles(points);
   }
 
   render() {
@@ -193,6 +205,7 @@ class MapView extends LitElement {
             .world=${this.world}
             .points=${this.points}
             nonce=${this.last_updated}
+            @selection-changed=${this.handleSelectionChanged}
           ></hex-map>
         ` : nothing}
 
@@ -211,8 +224,6 @@ class MapView extends LitElement {
             ?open=${this.show_inspector || showProfile}
             .list=${this.profiles}
             .selected=${nodeId}
-            lat="55.3"
-            lon="-173.2"
           >
           </node-inspector>
         </div>

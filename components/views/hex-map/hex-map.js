@@ -26,6 +26,9 @@ class HexMap extends LitElement {
 
   static styles = hexMapStyles;
 
+  // declare public properties for other components to read.
+  selectedPoints = [];
+
   constructor() {
     super();
     this.counter = countUp();
@@ -44,6 +47,10 @@ class HexMap extends LitElement {
     this.panX = 0;
     this.panY = 0;
     this.zoom = 1;
+    this.cellX = 0;
+    this.cellY = 0;
+    this.hover = null;
+    this.selected = null;
     this.d3zoom = void 0;
     this.ready = false;
 
@@ -81,10 +88,6 @@ class HexMap extends LitElement {
     // this.setup(); // wait for 'nonce'
   }
 
-  disconnectedCallback() {
-    super.disconnectedCallback();
-  }
-
   updated(changedProperties) {
     changedProperties.forEach((oldValue, propName) => {
       if (propName === 'nonce') {
@@ -99,9 +102,33 @@ class HexMap extends LitElement {
     });
   }
 
+  mouseMoveHandler(e) {
+    // multiply by pixelRatio because hit-test is done in the canvas
+    // coordinate-system scaled by pixelRatio.
+    this.hoverX = e.x * this.pixelRatio;
+    this.hoverY = e.y * this.pixelRatio;
+    requestAnimationFrame(()=>{
+      this.draw();
+    });
+  }
+
+  mouseDownHandler() {
+    // for touch, we should hit-test here if this.hover is null.
+    if (this.selected !== this.hover) {
+      this.selected = this.hover;
+      // d3-hexgrid was modified to preserve the binned 'points' array
+      // on each hexgrid cell, so we can recover the userVariables (original points)
+      this.selectedPoints = this.selected ? this.selected.points : [];
+      this.dispatchEvent(new Event('selection-changed'));
+    }
+    requestAnimationFrame(()=>{
+      this.draw();
+    });
+  }
+
   render() {
     return html`
-      <canvas id="Hexmap"></canvas>
+      <canvas id="Hexmap" @mousemove="${this.mouseMoveHandler}" @mousedown="${this.mouseDownHandler}"></canvas>
 
       <!--div class="floating center">
         <p>HexMap Run Time: <span>${asyncReplace(this.counter)}</span></p>

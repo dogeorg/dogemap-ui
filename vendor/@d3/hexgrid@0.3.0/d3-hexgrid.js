@@ -1035,6 +1035,7 @@
 
       // Remove grid points and cache cover.
       // optimize: count non-gridpoints (instead of splicing array) [also bugfix!]
+      var userPoints = [];
       for (var j = 0; j < hexPoint.points.length; j++) {
         var point = hexPoint.points[j];
         if (point.gridpoint === 1) {
@@ -1043,6 +1044,7 @@
         } else {
           datapoints += 1;
           if (!point.core) net = true; // DogeBox 'net' property-merging.
+          userPoints.push(point);
         }
       }
 
@@ -1055,6 +1057,7 @@
         cover: cover,
         gridpoint: gridpoint,
         net: net, // DogeBox 'net' property-merging.
+        points: userPoints, // DogeBox: preserve the binned 'points' with userVariables.
       };
     }
 

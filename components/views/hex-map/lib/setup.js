@@ -64,17 +64,6 @@ export function setup () {
   const geoPath = d3.geoPath() // svg.append("path").attr("d", d3.geoPath());
     .projection(this.projection);
 
-  // Iterate over our array of points, "projecting" these geographical coordinates
-  // onto the 2D canvas using the Robinson projection to determine their corresponding (x, y) positions
-  // on the screen. This processing is essential for accurately placing these points 
-  // on the canvas based on their real-world locations.
-  console.log('..determing x/y of each point according to projection');
-  this.points.forEach((site) => {
-    const coords = this.projection([+site.lng, +site.lat]);
-    site.x = coords[0];
-    site.y = coords[1];
-  });
-
   // Hexgrid generator.
   console.log('..configuring hexgrid');
   const hexgrid = d3
@@ -86,10 +75,12 @@ export function setup () {
     .hexRadius(3);
 
   // Hexgrid instance.
-  // userVariables=['core'] copies the 'core' property to hex.grid.layout (per point)
+  // userVariables=[..] copies the named properties to hex.grid.layout (per point)
   // depends on custom modifications to d3-hexgrid.js to merge 'core' -> 'net'
+  // also, hexgrid doesn't preserve the user variables as documented,
+  // so its was modified to add a 'points' field with the user variables.
   console.log('..suppling hexgrid with point data');
-  this.hex = hexgrid(this.points, ['core']);
+  this.hex = hexgrid(this.points, ['core','subver','lat','lon','country','city','node','identity']);
 
   // Defines a new path for a hexagon shape
   console.log('..defining hexagon');
