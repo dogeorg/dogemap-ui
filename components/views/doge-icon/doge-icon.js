@@ -12,7 +12,7 @@ class DogeIconElement extends HTMLElement {
   }
 
   connectedCallback() {
-    console.log(`doge-icon: connected.`);
+    //console.log(`doge-icon: connected.`);
     if (!this.c) {
       this.c = document.createElement("canvas");
       this.c.width = 48;
@@ -26,7 +26,7 @@ class DogeIconElement extends HTMLElement {
   attributeChangedCallback(name, oldValue, newValue) {
     // this can happen before connectedCallback()
     // which means we need internal attribute change-tracking.
-    console.log(`doge-icon: attribute ${name} changed.`);
+    //console.log(`doge-icon: attribute ${name} changed.`);
     if (name === "data") {
       this.imgData = newValue;
       this.dataChanged = true;
@@ -36,7 +36,7 @@ class DogeIconElement extends HTMLElement {
   }
 
   drawIcon() {
-    console.log(`doge-icon: drawing the icon.`);
+    //console.log(`doge-icon: drawing the icon.`);
     this.dataChanged = false;
     var gfx = this.c.getContext("2d");
     if (this.imgData) {
