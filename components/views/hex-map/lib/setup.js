@@ -41,11 +41,6 @@ export function setup () {
   // Retreive the 2d rendering context of our canvas
   this.renderingContext = this.canvas.node().getContext("2d");
 
-  // Set the rendering context scale to match the pixel density 
-  // of the user's device to ensure a clear image.
-  console.log('..setting scale');
-  this.renderingContext.scale(this.pixelRatio, this.pixelRatio);
-
   // Projection (a function that converts geographical coordinates 
   // (eg latitude and longitude) from a spherical surface (like the Earth)
   // to a point on a flat surface).
@@ -75,12 +70,13 @@ export function setup () {
     .hexRadius(3);
 
   // Hexgrid instance.
-  // userVariables=[..] copies the named properties to hex.grid.layout (per point)
   // depends on custom modifications to d3-hexgrid.js to merge 'core' -> 'net'
-  // also, hexgrid doesn't preserve the user variables as documented,
-  // so its was modified to add a 'points' field with the user variables.
+  // userVariables=[..] copies the named properties to hex.grid.layout (per point)
+  // hexgrid doesn't preserve the user variables as documented,
+  // so it was modified to add a 'points' field with the user variables.
   console.log('..suppling hexgrid with point data');
-  this.hex = hexgrid(this.points, ['core','subver','lat','lon','country','city','node','identity']);
+  const userVariables = ['core','subver','lat','lon','country','city','node','identity'];
+  this.hex = hexgrid(this.points, userVariables);
 
   // Defines a new path for a hexagon shape
   console.log('..defining hexagon');
@@ -161,7 +157,7 @@ export function resize () {
 
   this.width = width;
   this.height = height;
-  this.pixelRatio = window.devicePixelRatio || 1;
+  this.pixelRatio = window.devicePixelRatio || 1; // for monitor change.
 
   // Resize canvas.
   this.canvas
@@ -169,11 +165,6 @@ export function resize () {
     .attr("height", this.height * this.pixelRatio)
     .style("width", this.width + 'px')
     .style("height", this.height + 'px');
-
-  // Set the rendering context scale to match the pixel density 
-  // of the user's device to ensure a clear image.
-  this.renderingContext.resetTransform();
-  this.renderingContext.scale(this.pixelRatio, this.pixelRatio);
 
   // Minimum zoom: document height matches the viewport height (dynamic)
   const minZoom = height / docHeight;

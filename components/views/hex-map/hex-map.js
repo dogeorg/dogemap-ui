@@ -117,7 +117,8 @@ class HexMap extends LitElement {
     if (this.selected !== this.hover) {
       this.selected = this.hover;
       // d3-hexgrid was modified to preserve the binned 'points' array
-      // on each hexgrid cell, so we can recover the userVariables (original points)
+      // on each hexgrid cell, so we can recover the original points
+      // by using the d3-hexgrid userVariables feature (which was broken)
       this.selectedPoints = this.selected ? this.selected.points : [];
       this.dispatchEvent(new Event('selection-changed'));
     }

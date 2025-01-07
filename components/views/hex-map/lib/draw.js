@@ -3,12 +3,13 @@ export function draw() {
   var hitX = this.hoverX, hitY = this.hoverY;
   var prevX = 0, prevY = 0;
 
+  // Reset the canvas transform
+  ctx.resetTransform();
+  ctx.scale(this.pixelRatio, this.pixelRatio);
+
   // Clear the entire canvas area 
   // before applying new transformations and redrawing the content
   ctx.clearRect(0, 0, this.width, this.height);
-
-  // Save the starting canvas state
-  ctx.save();
 
   // Apply pan and zoom (on top of scale by pixelRatio)
   ctx.translate(this.panX, this.panY);
@@ -18,6 +19,7 @@ export function draw() {
   this.hover = null;
 
   for (var hex of this.hex.grid.layout) {
+    // Translate to new hex position without resetting the transform.
     ctx.translate(hex.x - prevX, hex.y - prevY);
     prevX = hex.x; prevY = hex.y;
 
@@ -56,7 +58,33 @@ export function draw() {
     ctx.fillStyle = this.color(selected);
     ctx.fill(this.hexagon);
   }
+}
 
-  // Restore the transformed canvas state
-  ctx.restore();
+// Use the canvas 2d API to perform hit-testing against each
+// hex in the hexgrid layout.
+export function hitTest(hitX, hitY) {
+  var ctx = this.renderingContext, prevX = 0, prevY = 0;
+
+  // Reset the canvas transform
+  ctx.resetTransform();
+  ctx.scale(this.pixelRatio, this.pixelRatio);
+
+  // Apply pan and zoom (on top of scale by pixelRatio)
+  ctx.translate(this.panX, this.panY);
+  ctx.scale(this.zoom, this.zoom);
+
+  // Clear hovered cell.
+  this.hover = null;
+
+  for (var hex of this.hex.grid.layout) {
+    // Translate to new hex position without resetting the transform.
+    ctx.translate(hex.x - prevX, hex.y - prevY);
+    prevX = hex.x; prevY = hex.y;
+
+    // Hit-test the hexedge path transformed by the current canvas transform
+    // (hex translation, zoom, pan, pixelRatio)
+    if (ctx.isPointInPath(this.hexedge, hitX, hitY)) {
+      this.hover = hex;
+    }
+  }
 }
