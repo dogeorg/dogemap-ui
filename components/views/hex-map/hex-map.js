@@ -40,15 +40,15 @@ class HexMap extends LitElement {
     this.color;
     this.hexagon;
     this.hex;
-    this.width = 0
-    this.height = 0
+    this.width = 0; // in css pixels.
+    this.height = 0;
     this.pixelRatio = 1;
     this.resizeObserver = void 0;
-    this.panX = 0;
+    this.panX = 0; // in css pixels.
     this.panY = 0;
     this.zoom = 1;
-    this.cellX = 0;
-    this.cellY = 0;
+    this.hoverX = 0;
+    this.hoverY = 0;
     this.hover = null;
     this.selected = null;
     this.d3zoom = void 0;
@@ -103,33 +103,61 @@ class HexMap extends LitElement {
   }
 
   mouseMoveHandler(e) {
-    // multiply by pixelRatio because hit-test is done in the canvas
-    // coordinate-system scaled by pixelRatio.
-    this.hoverX = e.x * this.pixelRatio;
-    this.hoverY = e.y * this.pixelRatio;
+    console.log("mousemove", e.clientX, e.clientY);
+    this.hoverX = e.clientX;
+    this.hoverY = e.clientY;
+    // Request animation frame to rate-limit the work.
     requestAnimationFrame(()=>{
-      this.draw();
+      const hover = this.hitTest(this.hoverX, this.hoverY);
+      if (hover !== this.hover) {
+        this.hover = hover;
+        this.draw();
+      }
     });
   }
 
   mouseDownHandler() {
-    // for touch, we should hit-test here if this.hover is null.
-    if (this.selected !== this.hover) {
-      this.selected = this.hover;
+    if (this.selectHex(this.hover)) {
+      requestAnimationFrame(()=>{
+        this.draw();
+      });
+    }
+  }
+
+  touchStartHandler(e) {
+    console.log("touchstart");
+    if (e.changedTouches && e.changedTouches.length > 0) {
+      this.hoverX = e.changedTouches[0].clientX;
+      this.hoverY = e.changedTouches[0].clientY;
+      this.hover = null; // don't render hover.
+      // Request animation frame to rate-limit the work.
+      requestAnimationFrame(()=>{
+        const touched = this.hitTest(this.hoverX, this.hoverY);
+        if (this.selectHex(touched)) {
+          this.draw();
+        }
+      });
+      e.preventDefault(); // prevent 'mousemove'
+    }
+  }
+
+  selectHex(hex) {
+    // Select the hovered/touched hex (can be null)
+    if (this.selected !== hex) {
+      this.selected = hex;
       // d3-hexgrid was modified to preserve the binned 'points' array
       // on each hexgrid cell, so we can recover the original points
       // by using the d3-hexgrid userVariables feature (which was broken)
-      this.selectedPoints = this.selected ? this.selected.points : [];
-      this.dispatchEvent(new Event('selection-changed'));
+      this.selectedPoints = hex !== null ? hex.points : [];
+      this.dispatchEvent(new CustomEvent('selection-changed'));
+      return true; // selection changed
     }
-    requestAnimationFrame(()=>{
-      this.draw();
-    });
+    return false;
   }
 
   render() {
     return html`
-      <canvas id="Hexmap" @mousemove="${this.mouseMoveHandler}" @mousedown="${this.mouseDownHandler}"></canvas>
+      <canvas id="Hexmap" @touchstart="${this.touchStartHandler}" @mousemove="${this.mouseMoveHandler}" @mousedown="${this.mouseDownHandler}></canvas>
 
       <!--div class="floating center">
         <p>HexMap Run Time: <span>${asyncReplace(this.counter)}</span></p>
