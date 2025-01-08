@@ -143,9 +143,8 @@ class MapView extends LitElement {
       }
     }
 
-    // XXX hack to force the <node-inspector> component to update, since we changed this.profiles above.
-    // FIXME: this re-runs the <hex-map> setup process as well!
-    this.last_updated = Date.now();
+    // Cause <node-inspector> to update, since we changed this.profiles.
+    this.requestUpdate();
   }
 
   closeNode() {
