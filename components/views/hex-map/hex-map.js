@@ -103,7 +103,6 @@ class HexMap extends LitElement {
   }
 
   mouseMoveHandler(e) {
-    console.log("mousemove", e.clientX, e.clientY);
     this.hoverX = e.clientX;
     this.hoverY = e.clientY;
     // Request animation frame to rate-limit the work.
@@ -125,19 +124,17 @@ class HexMap extends LitElement {
   }
 
   touchStartHandler(e) {
-    console.log("touchstart");
     if (e.changedTouches && e.changedTouches.length > 0) {
       this.hoverX = e.changedTouches[0].clientX;
       this.hoverY = e.changedTouches[0].clientY;
-      this.hover = null; // don't render hover.
       // Request animation frame to rate-limit the work.
       requestAnimationFrame(()=>{
         const touched = this.hitTest(this.hoverX, this.hoverY);
+        this.hover = touched;
         if (this.selectHex(touched)) {
           this.draw();
         }
       });
-      e.preventDefault(); // prevent 'mousemove'
     }
   }
 
@@ -157,7 +154,7 @@ class HexMap extends LitElement {
 
   render() {
     return html`
-      <canvas id="Hexmap" @touchstart="${this.touchStartHandler}" @mousemove="${this.mouseMoveHandler}" @mousedown="${this.mouseDownHandler}></canvas>
+      <canvas id="Hexmap" @mousemove="${this.mouseMoveHandler}" @mousedown="${this.mouseDownHandler}" @touchstart="${this.touchStartHandler}"></canvas>
 
       <!--div class="floating center">
         <p>HexMap Run Time: <span>${asyncReplace(this.counter)}</span></p>

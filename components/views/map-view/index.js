@@ -163,7 +163,6 @@ class MapView extends LitElement {
 
   handleSelectionChanged(e) {
     const points = e.target.selectedPoints; // HexMap.selectedPoints
-    console.log("selectedPoints", points);
     this.fetchProfiles(points);
   }
 
