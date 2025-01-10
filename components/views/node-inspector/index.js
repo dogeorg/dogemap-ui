@@ -37,7 +37,7 @@ class NodeInspector extends LitElement {
       max-height: 97vh;
       overflow-x: hidden;
       overflow-y: scroll;
-      background: rgba(255,255,255,0.1);
+      background: rgba(0,0,0,0.6);
     }
     .wrap[hidden="true"] {
       display: none;
@@ -45,6 +45,8 @@ class NodeInspector extends LitElement {
     ul {
       width: 100%;
       padding-left: 0;
+      margin-top: 4px;
+      margin-bottom: 8px;
     }
     li {
       width: 100%;
